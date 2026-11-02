@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saroj Shop Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <a href="/admin.html" class="logo"><span class="logo-mark">S</span>Shop Admin</a>
+    <div class="header-actions">
+      <a href="/" class="btn">View Shop</a>
+      <button class="btn secondary" id="logoutBtn">Log Out</button>
+    </div>
+  </header>
+
+  <main class="section admin">
+    <h2>Orders</h2>
+
+    <!-- Numbers at the top -->
+    <div class="stats">
+      <div class="stat"><span id="statOrders">0</span>Orders</div>
+      <div class="stat"><span id="statNew">0</span>New (received)</div>
+      <div class="stat"><span id="statSales">¥0</span>Sales</div>
+    </div>
+
+    <div class="admin-actions">
+      <button class="filter" id="refreshBtn">🔄 Refresh</button>
+    </div>
+
+    <!-- Order cards are created by admin.js -->
+    <div class="orders" id="orders"></div>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

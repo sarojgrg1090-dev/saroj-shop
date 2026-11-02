@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saroj Shop — Style that travels the world</title>
+  <meta name="description" content="Clothes, shoes, tech and football jerseys. Delivered across Japan and worldwide.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Tells the CSS that JavaScript is on, so scroll animations can start hidden -->
+  <script>document.documentElement.classList.add("js");</script>
+</head>
+<body>
+
+  <!-- ===== TOP BAR ===== -->
+  <div class="topbar">🌍 Now shipping worldwide &nbsp;·&nbsp; 🚚 Free delivery in Japan over ¥5,000</div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <a href="#" class="logo"><span class="logo-mark">S</span>Saroj<span class="logo-dot">.</span>Shop</a>
+    <nav class="nav">
+      <a href="#products">Shop</a>
+      <a href="#jerseys">Jerseys</a>
+      <a href="#shipping">Shipping</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="cart-btn" id="cartBtn" aria-label="Open cart">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l1 13H5L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </header>
+
+  <!-- ===== HERO (big banner) ===== -->
+  <section class="hero">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="hero-inner">
+      <div class="hero-content">
+        <span class="eyebrow">✦ New Season 2026</span>
+        <h1>Style that <span class="gradient-text">travels</span> the world.</h1>
+        <p class="hero-text">
+          Clothes, shoes, tech and football jerseys — delivered across Japan
+          and to <span class="country-count">26</span> countries.
+        </p>
+        <div class="hero-ctas">
+          <a href="#products" class="btn btn-lg">Shop Now <span aria-hidden="true">→</span></a>
+          <a href="#jerseys" class="btn btn-lg btn-ghost">⚽ Football Collection</a>
+        </div>
+        <ul class="hero-points">
+          <li><strong>2–3 days</strong>delivery in Japan</li>
+          <li><strong class="country-count">26</strong>countries worldwide</li>
+          <li><strong>30 days</strong>easy returns</li>
+        </ul>
+      </div>
+
+      <!-- Floating jersey card (the jersey is drawn by script.js) -->
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-card">
+          <div class="hero-jersey" id="heroJersey"></div>
+          <div class="hero-card-info">
+            <span>New · Football Jerseys</span>
+            <strong id="heroPrice"></strong>
+          </div>
+        </div>
+        <span class="float-chip chip-1">👟</span>
+        <span class="float-chip chip-2">🎧</span>
+        <span class="float-chip chip-3">⚽</span>
+        <span class="float-chip chip-4">⌚</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MOVING TEXT STRIP ===== -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Free delivery in Japan over ¥5,000</span><span>✦</span>
+      <span>We ship worldwide 🌍</span><span>✦</span>
+      <span>New: Football jerseys ⚽</span><span>✦</span>
+      <span>Free store pickup in Shinjuku &amp; Shibuya</span><span>✦</span>
+      <!-- same text again, so the loop looks endless -->
+      <span>Free delivery in Japan over ¥5,000</span><span>✦</span>
+      <span>We ship worldwide 🌍</span><span>✦</span>
+      <span>New: Football jerseys ⚽</span><span>✦</span>
+      <span>Free store pickup in Shinjuku &amp; Shibuya</span><span>✦</span>
+    </div>
+  </div>
+
+  <!-- ===== CATEGORIES ===== -->
+  <section class="section">
+    <div class="section-head reveal">
+      <span class="eyebrow dark">Categories</span>
+      <h2>Shop by category</h2>
+    </div>
+    <div class="category-grid reveal">
+      <button class="category-tile cat-jerseys" data-goto-category="jerseys">
+        <span class="cat-tag">New</span>
+        <span class="cat-emoji">⚽</span>
+        <span class="cat-name">Football Jerseys</span>
+      </button>
+      <button class="category-tile cat-clothes" data-goto-category="clothes">
+        <span class="cat-emoji">👕</span>
+        <span class="cat-name">Clothes</span>
+      </button>
+      <button class="category-tile cat-shoes" data-goto-category="shoes">
+        <span class="cat-emoji">👟</span>
+        <span class="cat-name">Shoes</span>
+      </button>
+      <button class="category-tile cat-electronics" data-goto-category="electronics">
+        <span class="cat-emoji">🎧</span>
+        <span class="cat-name">Electronics</span>
+      </button>
+      <button class="category-tile cat-accessories" data-goto-category="accessories">
+        <span class="cat-emoji">🎒</span>
+        <span class="cat-name">Accessories</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ===== PRODUCTS ===== -->
+  <main id="products" class="section">
+    <div class="section-head reveal">
+      <span class="eyebrow dark">The Collection</span>
+      <h2>Our Products</h2>
+    </div>
+
+    <div class="controls">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" id="search" placeholder="Search products..." aria-label="Search products">
+      </div>
+      <div class="filters" id="filters">
+        <button class="filter active" data-category="all">All</button>
+        <button class="filter" data-category="jerseys">⚽ Jerseys</button>
+        <button class="filter" data-category="clothes">Clothes</button>
+        <button class="filter" data-category="shoes">Shoes</button>
+        <button class="filter" data-category="electronics">Electronics</button>
+        <button class="filter" data-category="accessories">Accessories</button>
+      </div>
+    </div>
+
+    <!-- Product cards are created by JavaScript (script.js) -->
+    <div class="product-grid" id="productGrid"></div>
+    <p class="no-results" id="noResults" hidden>No products found 😢</p>
+  </main>
+
+  <!-- ===== FOOTBALL BANNER ===== -->
+  <section id="jerseys" class="jersey-banner">
+    <div class="jersey-banner-inner">
+      <div class="jersey-text reveal">
+        <span class="eyebrow">⚽ New Arrival</span>
+        <h2>The Football Collection</h2>
+        <p>Home, retro and goalkeeper kits made for match day — and every day after. Light, breathable and built to last.</p>
+        <button class="btn btn-lg" data-goto-category="jerseys">Shop Jerseys <span aria-hidden="true">→</span></button>
+      </div>
+      <!-- Three jerseys, drawn by script.js -->
+      <div class="jersey-fan reveal" id="jerseyFan" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- ===== SHIPPING ===== -->
+  <section id="shipping" class="section">
+    <div class="section-head reveal">
+      <span class="eyebrow dark">Shipping</span>
+      <h2>We deliver worldwide 🌍</h2>
+      <p class="section-sub">Order from anywhere. Get it delivered to your door, or pick it up in our Tokyo stores for free.</p>
+    </div>
+    <!-- Cards are created from shipping.js, so prices are always correct -->
+    <div class="shipping-grid" id="shippingCards"></div>
+  </section>
+
+  <!-- ===== ABOUT ===== -->
+  <section id="about" class="section">
+    <div class="section-head reveal">
+      <span class="eyebrow dark">Why Saroj Shop</span>
+      <h2>Made for you</h2>
+    </div>
+    <div class="features reveal">
+      <div class="feature"><span class="feature-icon">🚚</span><h3>Fast Delivery</h3><p>2–3 days in Japan, 5–14 days worldwide.</p></div>
+      <div class="feature"><span class="feature-icon">💯</span><h3>Quality First</h3><p>Every product is checked before it ships.</p></div>
+      <div class="feature"><span class="feature-icon">↩️</span><h3>Easy Returns</h3><p>Return within 30 days, no questions asked.</p></div>
+      <div class="feature"><span class="feature-icon">🏪</span><h3>Free Store Pickup</h3><p>Collect your order in Shinjuku or Shibuya.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER / CONTACT ===== -->
+  <footer id="contact" class="footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="logo light"><span class="logo-mark">S</span>Saroj<span class="logo-dot">.</span>Shop</a>
+        <p>Style that travels the world. Clothes, shoes, tech and football jerseys — from Tokyo to you.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Shop</h4>
+        <a href="#products">All products</a>
+        <a href="#jerseys">Football jerseys</a>
+        <a href="#shipping">Shipping</a>
+      </div>
+      <div class="footer-links">
+        <h4>Contact</h4>
+        <a href="mailto:sarojshop1020@gmail.com">✉️ sarojshop1020@gmail.com</a>
+        <span>📍 Tokyo, Japan</span>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Saroj Shop. All rights reserved.</div>
+  </footer>
+
+  <!-- ===== CART SIDEBAR ===== -->
+  <div class="overlay" id="overlay"></div>
+  <aside class="cart" id="cart">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="icon-btn" id="closeCart" aria-label="Close cart">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+      <p class="shipping-note" id="shippingNote"></p>
+      <div class="cart-total">
+        <span>Subtotal</span>
+        <span id="cartTotal">¥0</span>
+      </div>
+      <button class="btn full" id="checkoutBtn">Checkout</button>
+    </div>
+  </aside>
+
+  <!-- ===== CHECKOUT POPUP ===== -->
+  <div class="modal" id="checkoutModal" hidden>
+    <div class="modal-box">
+      <button class="icon-btn modal-close" id="closeModal" aria-label="Close">✕</button>
+
+      <form id="checkoutForm">
+        <h3>Checkout</h3>
+        <label>Name <input type="text" name="name" required></label>
+        <label>Email <input type="email" name="email" required></label>
+        <label>Phone <input type="tel" name="phone" placeholder="090-1234-5678" required></label>
+
+        <!-- Delivery or store pickup -->
+        <p class="field-title">How do you want to get your order?</p>
+        <div class="method-options">
+          <label class="method">
+            <input type="radio" name="fulfillment" value="delivery" checked>
+            <span>🚚 Delivery<small>Japan &amp; worldwide</small></span>
+          </label>
+          <label class="method">
+            <input type="radio" name="fulfillment" value="pickup">
+            <span>🏪 Store Pickup<small>Always free</small></span>
+          </label>
+        </div>
+
+        <!-- Only one of these is shown. A disabled fieldset is skipped by form validation. -->
+        <fieldset id="deliveryFields">
+          <label>Country
+            <select name="country" id="countrySelect" required></select>
+          </label>
+          <p class="shipping-info" id="shippingInfo"></p>
+          <label><span id="postalLabel">Postal Code</span>
+            <input type="text" name="postal" id="postalInput" placeholder="123-4567" pattern="\d{3}-?\d{4}" required>
+          </label>
+          <label>Address <textarea name="address" id="addressInput" rows="2" required></textarea></label>
+        </fieldset>
+
+        <fieldset id="pickupFields" hidden disabled>
+          <label>Store
+            <select name="store" required>
+              <option value="Shinjuku Store">Shinjuku Store</option>
+              <option value="Shibuya Store">Shibuya Store</option>
+            </select>
+          </label>
+          <label>Pickup Date <input type="date" name="pickupDate" id="pickupDate" required></label>
+          <label>Pickup Time
+            <select name="pickupTime" required>
+              <option value="">Choose a time</option>
+              <option>11:00 – 13:00</option>
+              <option>13:00 – 15:00</option>
+              <option>15:00 – 17:00</option>
+              <option>17:00 – 19:00</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <div class="summary">
+          <div><span>Subtotal</span><span id="sumSubtotal">¥0</span></div>
+          <div><span>Shipping</span><span id="sumShipping">¥0</span></div>
+          <div class="summary-total"><span>Total</span><span id="sumTotal">¥0</span></div>
+        </div>
+        <button type="submit" class="btn full">Place Order</button>
+      </form>
+
+      <div class="success" id="successMsg" hidden>
+        <div class="success-icon">🎉</div>
+        <h3>Thank you for your order!</h3>
+        <p class="order-number">Order No. <strong id="orderNumber"></strong></p>
+        <p id="orderDetails"></p>
+        <button class="btn" id="continueBtn">Continue Shopping</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Small pop-up message ("Added to cart") -->
+  <div class="toast" id="toast"></div>
+
+  <script src="shipping.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
