@@ -1422,8 +1422,10 @@ button { font-family: inherit; }
 
 .stat span {
   display: block;
-  font-family: var(--font-display);
-  font-size: 1.9rem;
+  font-family: var(--font); /* narrower than Syne, so big yen amounts fit */
+  font-size: clamp(1.1rem, 4.5vw, 1.9rem);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   font-weight: 800;
   color: var(--ink);
 }
@@ -1584,6 +1586,8 @@ button { font-family: inherit; }
   .footer-grid { grid-template-columns: 1fr; }
   .cart { border-radius: 0; }
   .modal-box { padding: 26px 20px; }
+  .stats { gap: 10px; }
+  .stat { padding: 16px 8px; font-size: 0.85rem; }
 }
 
 /* People who turn off animations in their settings get a calm page */
