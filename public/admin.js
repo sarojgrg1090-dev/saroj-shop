@@ -1,5 +1,5 @@
 // ===== ADMIN PAGE: see orders and change their status =====
-const STATUSES = ["received", "preparing", "ready", "shipped", "completed", "cancelled"];
+const STATUSES = ["pending_payment", "received", "preparing", "ready", "shipped", "completed", "cancelled"];
 
 const ordersList = document.getElementById("orders");
 const statOrders = document.getElementById("statOrders");
@@ -42,7 +42,10 @@ function renderOrder(order) {
     <div class="order-card">
       <div class="order-top">
         <strong>${escapeHtml(order.order_number)}</strong>
-        <span class="badge status-${order.status}">${order.status}</span>
+        <span>
+          ${order.paid ? `<span class="badge status-completed">💳 Paid</span>` : ""}
+          <span class="badge status-${order.status}">${order.status.replace("_", " ")}</span>
+        </span>
       </div>
       <p class="order-meta">${escapeHtml(order.created_at)}</p>
       <p>👤 ${escapeHtml(order.name)} · ${escapeHtml(order.email)} · ${escapeHtml(order.phone)}</p>
@@ -70,7 +73,9 @@ async function loadOrders() {
   statOrders.textContent = orders.length;
   statNew.textContent = orders.filter((o) => o.status === "received").length;
   statSales.textContent = formatPrice(
-    orders.filter((o) => o.status !== "cancelled").reduce((sum, o) => sum + o.total, 0)
+    orders
+      .filter((o) => o.status !== "cancelled" && o.status !== "pending_payment") // not paid = not a sale yet
+      .reduce((sum, o) => sum + o.total, 0)
   );
 
   ordersList.innerHTML = orders.length

@@ -287,7 +287,11 @@
           <div><span>Shipping</span><span id="sumShipping">¥0</span></div>
           <div class="summary-total"><span>Total</span><span id="sumTotal">¥0</span></div>
         </div>
-        <button type="submit" class="btn full">Place Order</button>
+        <p class="payment-note" id="paymentNote" hidden>
+          🔒 You'll pay by card on Stripe's secure page.
+          <small>Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>
+        </p>
+        <button type="submit" class="btn full" id="placeOrderBtn">Place Order</button>
       </form>
 
       <div class="success" id="successMsg" hidden>
@@ -297,6 +301,37 @@
         <p id="orderDetails"></p>
         <button class="btn" id="continueBtn">Continue Shopping</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== JERSEY OPTIONS POPUP (size + name/number on the back) ===== -->
+  <div class="modal" id="optionsModal" hidden>
+    <div class="modal-box options-box">
+      <button class="icon-btn modal-close" id="closeOptions" aria-label="Close">✕</button>
+
+      <form id="optionsForm">
+        <!-- Live preview: front, or the back with the printed name + number -->
+        <div class="options-preview cat-jerseys" id="optionsPreview"></div>
+        <p class="preview-label" id="previewLabel">Front</p>
+
+        <span class="product-category">Football Jersey</span>
+        <h3 id="optionsName"></h3>
+
+        <p class="field-title">Size</p>
+        <div class="size-options" id="sizeOptions"></div>
+
+        <label class="print-toggle">
+          <input type="checkbox" id="printToggle">
+          <span>Print name &amp; number on the back <strong id="printPriceLabel"></strong></span>
+        </label>
+
+        <div class="print-fields" id="printFields" hidden>
+          <label>Name <input type="text" id="printName" maxlength="12" placeholder="SAROJ" autocomplete="off"></label>
+          <label>Number <input type="text" id="printNumber" maxlength="2" inputmode="numeric" placeholder="10" autocomplete="off"></label>
+        </div>
+
+        <button type="submit" class="btn full" id="optionsAddBtn">Add to Cart</button>
+      </form>
     </div>
   </div>
 

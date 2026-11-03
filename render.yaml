@@ -14,3 +14,5 @@ services:
         value: admin
       - key: ADMIN_PASSWORD
         sync: false # Render asks you to type a password during setup (never put it in this file)
+      - key: STRIPE_SECRET_KEY
+        sync: false # your Stripe TEST secret key (sk_test_...) — optional, turns on card payments

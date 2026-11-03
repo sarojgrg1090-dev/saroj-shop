@@ -11,10 +11,17 @@ const CATEGORY_LABELS = {
   accessories: "Accessories",
 };
 
+// Name + number printed on a jersey (same rule as server.js)
+const PRINT_NAME_PATTERN = /^[A-Z .'-]{1,12}$/;
+const PRINT_NUMBER_PATTERN = /^\d{1,2}$/;
+
 // ===== 2. STATE (data that changes while using the site) =====
-let cart = []; // [{ id: 1, qty: 2 }, ...] — loaded after products arrive
+// cart: [{ id: 13, qty: 1, size: "M", printName: "SAROJ", printNumber: "10" }, ...]
+let cart = []; // loaded after products arrive
 let currentCategory = "all";
 let searchText = "";
+let paymentsEnabled = false; // true when the server has Stripe turned on
+let optionsProduct = null; // the jersey open in the options popup
 
 // ===== 3. GET HTML ELEMENTS =====
 const productGrid = document.getElementById("productGrid");
@@ -53,6 +60,21 @@ const heroJersey = document.getElementById("heroJersey");
 const heroPrice = document.getElementById("heroPrice");
 const jerseyFan = document.getElementById("jerseyFan");
 const shippingCards = document.getElementById("shippingCards");
+const paymentNote = document.getElementById("paymentNote");
+const placeOrderBtn = document.getElementById("placeOrderBtn");
+const optionsModal = document.getElementById("optionsModal");
+const optionsForm = document.getElementById("optionsForm");
+const optionsPreview = document.getElementById("optionsPreview");
+const previewLabel = document.getElementById("previewLabel");
+const optionsName = document.getElementById("optionsName");
+const sizeOptions = document.getElementById("sizeOptions");
+const printToggle = document.getElementById("printToggle");
+const printPriceLabel = document.getElementById("printPriceLabel");
+const printFields = document.getElementById("printFields");
+const printName = document.getElementById("printName");
+const printNumber = document.getElementById("printNumber");
+const optionsAddBtn = document.getElementById("optionsAddBtn");
+const closeOptionsBtn = document.getElementById("closeOptions");
 
 // ===== 4. HELPERS =====
 function formatPrice(amount) {
@@ -63,8 +85,40 @@ function findProduct(id) {
   return products.find((p) => p.id === id);
 }
 
+// Price of ONE item, including printing
+function unitPrice(item) {
+  const p = findProduct(item.id);
+  return p.price + (item.printName ? p.printPrice : 0);
+}
+
 function getSubtotal() {
-  return cart.reduce((sum, item) => sum + findProduct(item.id).price * item.qty, 0);
+  return cart.reduce((sum, item) => sum + unitPrice(item) * item.qty, 0);
+}
+
+// The same jersey in size M and size L are different cart lines
+function cartKey(item) {
+  return [item.id, item.size || "", item.printName || "", item.printNumber || ""].join("|");
+}
+
+// "Size M · SAROJ #10"
+function itemDetails(item) {
+  const parts = [];
+  if (item.size) parts.push(`Size ${item.size}`);
+  if (item.printName) parts.push(`${item.printName} #${item.printNumber}`);
+  return parts.join(" · ");
+}
+
+// Checks a saved cart item is still OK (products or rules may have changed)
+function isValidCartItem(item) {
+  const p = findProduct(item.id);
+  if (!p || !Number.isInteger(item.qty) || item.qty < 1) return false;
+  if (p.sizes && !p.sizes.includes(item.size)) return false;
+  if (item.printName || item.printNumber) {
+    if (!p.printPrice) return false;
+    if (!PRINT_NAME_PATTERN.test(item.printName || "")) return false;
+    if (!PRINT_NUMBER_PATTERN.test(item.printNumber || "")) return false;
+  }
+  return true;
 }
 
 // Pickup is always free. Delivery depends on the country (see shipping.js).
@@ -91,7 +145,7 @@ function daysFromToday(days) {
 function loadCart() {
   try {
     const saved = JSON.parse(localStorage.getItem("cart")) || [];
-    return saved.filter((item) => findProduct(item.id)); // ignore unknown products
+    return saved.filter(isValidCartItem); // ignore anything that's no longer valid
   } catch {
     return [];
   }
@@ -116,7 +170,8 @@ function showToast(message) {
 // ===== 5. JERSEY PICTURES (drawn with SVG code, no image files needed) =====
 let svgCount = 0; // every SVG on the page needs its own ids
 
-function jerseySvg({ main, accent, pattern, number }) {
+// back = true draws the back side with the printed name above the number
+function jerseySvg({ main, accent, pattern, number }, { back = false, name = "", backNumber = "" } = {}) {
   const id = "jersey" + ++svgCount;
   const shape =
     "M70 22 L44 30 L12 58 L32 92 L52 80 L52 182 L148 182 L148 80 L168 92 L188 58 L156 30 L130 22 Q100 44 70 22 Z";
@@ -130,6 +185,14 @@ function jerseySvg({ main, accent, pattern, number }) {
     design = `<path d="M28 20 L72 20 L192 190 L148 190 Z" fill="${accent}"/>`;
   }
   const numberColor = pattern === "plain" ? accent : "#ffffff";
+  const textStyle = `font-family="Syne, sans-serif" font-weight="800" fill="${numberColor}" stroke="${main}" paint-order="stroke"`;
+
+  // Front: curved collar + number. Back: flat collar + name + bigger number.
+  const collar = back ? "M70 22 Q100 30 130 22" : "M70 22 Q100 44 130 22";
+  const print = back
+    ? `<text x="100" y="86" text-anchor="middle" font-size="17" letter-spacing="1.5" stroke-width="3" ${textStyle}>${name}</text>
+       <text x="100" y="154" text-anchor="middle" font-size="64" stroke-width="4" ${textStyle}>${backNumber}</text>`
+    : `<text x="100" y="142" text-anchor="middle" font-size="54" stroke-width="4" ${textStyle}>${number}</text>`;
 
   return `
     <svg class="jersey-svg" viewBox="0 0 200 200" aria-hidden="true">
@@ -147,16 +210,20 @@ function jerseySvg({ main, accent, pattern, number }) {
         <path d="M12 58 L32 92 M188 58 L168 92" stroke="${accent}" stroke-width="12"/>
         <rect width="200" height="200" fill="url(#${id}-shade)"/>
       </g>
-      <path d="M70 22 Q100 44 130 22" fill="none" stroke="${accent}" stroke-width="7" stroke-linecap="round"/>
+      <path d="${collar}" fill="none" stroke="${accent}" stroke-width="7" stroke-linecap="round"/>
       <path d="${shape}" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="2"/>
-      <text x="100" y="142" text-anchor="middle" font-family="Syne, sans-serif" font-weight="800"
-        font-size="54" fill="${numberColor}" stroke="${main}" stroke-width="4" paint-order="stroke">${number}</text>
+      ${print}
     </svg>`;
 }
 
-// Jerseys get a drawn picture, everything else an emoji
-function productImage(p) {
-  return p.jersey ? jerseySvg(p.jersey) : `<span class="product-emoji">${p.emoji}</span>`;
+// Jerseys get a drawn picture, everything else an emoji.
+// A cart item with printing shows the back with its name + number.
+function productImage(p, item) {
+  if (!p.jersey) return `<span class="product-emoji">${p.emoji}</span>`;
+  if (item?.printName) {
+    return jerseySvg(p.jersey, { back: true, name: item.printName, backNumber: item.printNumber });
+  }
+  return jerseySvg(p.jersey);
 }
 
 // ===== 6. SHOW PRODUCTS =====
@@ -260,15 +327,16 @@ function populateCountries() {
 }
 
 // ===== 8. CART LOGIC =====
-function addToCart(id) {
-  const item = cart.find((i) => i.id === id);
+// choice = { id } or { id, size, printName, printNumber }
+function addToCart(choice) {
+  const item = cart.find((i) => cartKey(i) === cartKey(choice));
   if (item) {
     item.qty++;
   } else {
-    cart.push({ id, qty: 1 });
+    cart.push({ ...choice, qty: 1 });
   }
   updateCart();
-  showToast(`✅ ${findProduct(id).name} added to cart`);
+  showToast(`✅ ${findProduct(choice.id).name} added to cart`);
 
   // little "bump" animation on the cart number
   cartCount.classList.remove("bump");
@@ -276,16 +344,16 @@ function addToCart(id) {
   cartCount.classList.add("bump");
 }
 
-function changeQty(id, change) {
-  const item = cart.find((i) => i.id === id);
+function changeQty(key, change) {
+  const item = cart.find((i) => cartKey(i) === key);
   if (!item) return;
   item.qty += change;
-  if (item.qty <= 0) removeFromCart(id);
+  if (item.qty <= 0) removeFromCart(key);
   else updateCart();
 }
 
-function removeFromCart(id) {
-  cart = cart.filter((i) => i.id !== id);
+function removeFromCart(key) {
+  cart = cart.filter((i) => cartKey(i) !== key);
   updateCart();
 }
 
@@ -301,19 +369,22 @@ function updateCart() {
     cartItems.innerHTML = cart
       .map((item) => {
         const p = findProduct(item.id);
+        const key = cartKey(item);
+        const details = itemDetails(item);
         return `
         <div class="cart-item">
-          <span class="cart-item-thumb cat-${p.category}">${productImage(p)}</span>
+          <span class="cart-item-thumb cat-${p.category}">${productImage(p, item)}</span>
           <div class="cart-item-info">
             <h4>${p.name}</h4>
-            <p>${formatPrice(p.price)} × ${item.qty} = ${formatPrice(p.price * item.qty)}</p>
+            ${details ? `<p class="cart-item-details">${details}</p>` : ""}
+            <p>${formatPrice(unitPrice(item))} × ${item.qty} = ${formatPrice(unitPrice(item) * item.qty)}</p>
             <div class="qty">
-              <button data-action="minus" data-id="${p.id}" aria-label="One less">−</button>
+              <button data-action="minus" data-key="${key}" aria-label="One less">−</button>
               <span>${item.qty}</span>
-              <button data-action="plus" data-id="${p.id}" aria-label="One more">+</button>
+              <button data-action="plus" data-key="${key}" aria-label="One more">+</button>
             </div>
           </div>
-          <button class="remove-btn" data-action="remove" data-id="${p.id}">Remove</button>
+          <button class="remove-btn" data-action="remove" data-key="${key}">Remove</button>
         </div>`;
       })
       .join("");
@@ -343,7 +414,73 @@ function closeCart() {
   overlay.classList.remove("show");
 }
 
-// ===== 9. CHECKOUT =====
+// ===== 9. JERSEY OPTIONS POPUP (size + name/number) =====
+function openOptions(product) {
+  optionsProduct = product;
+  optionsName.textContent = product.name;
+  printPriceLabel.textContent = "+" + formatPrice(product.printPrice);
+
+  sizeOptions.innerHTML = product.sizes
+    .map(
+      (size) => `
+      <label class="size-chip">
+        <input type="radio" name="size" value="${size}" required>
+        <span>${size}</span>
+      </label>`
+    )
+    .join("");
+
+  optionsForm.reset();
+  printNumber.value = product.jersey.number; // start with the jersey's own number
+  updateOptions();
+  optionsModal.hidden = false;
+}
+
+function closeOptions() {
+  optionsModal.hidden = true;
+}
+
+// Redraw the preview and price whenever something changes
+function updateOptions() {
+  const printing = printToggle.checked;
+  printFields.hidden = !printing;
+  printName.required = printing;
+  printNumber.required = printing;
+
+  optionsPreview.innerHTML = printing
+    ? jerseySvg(optionsProduct.jersey, { back: true, name: printName.value, backNumber: printNumber.value })
+    : jerseySvg(optionsProduct.jersey);
+  previewLabel.textContent = printing ? "Back — your name & number" : "Front";
+
+  const price = optionsProduct.price + (printing ? optionsProduct.printPrice : 0);
+  optionsAddBtn.textContent = `Add to Cart — ${formatPrice(price)}`;
+}
+
+optionsForm.addEventListener("input", (e) => {
+  // Only allow what can be printed: A–Z, space, . ' -  and numbers 0–99
+  if (e.target === printName) {
+    printName.value = printName.value.toUpperCase().replace(/[^A-Z .'-]/g, "").replace(/^\s+/, "");
+  }
+  if (e.target === printNumber) {
+    printNumber.value = printNumber.value.replace(/\D/g, "");
+  }
+  updateOptions();
+});
+
+optionsForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const choice = { id: optionsProduct.id, size: optionsForm.elements.size.value };
+  if (printToggle.checked) {
+    choice.printName = printName.value.trim();
+    choice.printNumber = String(Number(printNumber.value)); // "07" -> "7"
+  }
+  addToCart(choice);
+  closeOptions();
+});
+
+closeOptionsBtn.addEventListener("click", closeOptions);
+
+// ===== 10. CHECKOUT =====
 function getMethod() {
   return checkoutForm.elements.fulfillment.value; // "delivery" or "pickup"
 }
@@ -379,6 +516,63 @@ function updateCheckout() {
   sumSubtotal.textContent = formatPrice(subtotal);
   sumShipping.textContent = shipping === 0 ? "Free" : formatPrice(shipping);
   sumTotal.textContent = formatPrice(subtotal + shipping);
+
+  paymentNote.hidden = !paymentsEnabled;
+  placeOrderBtn.textContent = paymentsEnabled ? "Continue to Payment →" : "Place Order";
+}
+
+// The "Thank you" message. order comes from the server.
+function showOrderSuccess(order) {
+  orderNumber.textContent = order.orderNumber;
+  const paidText = order.paid ? " 💳 Paid by card." : "";
+
+  if (order.fulfillment === "pickup") {
+    orderDetails.textContent =
+      `🏪 Pick up at ${order.store} on ${order.pickupDate}, ${order.pickupTime}. ` +
+      `Total: ${formatPrice(order.total)}.${paidText}`;
+  } else {
+    const { days } = getShippingInfo(order.country, 0);
+    orderDetails.textContent =
+      `🚚 Delivering to ${order.address}, ${order.country} in ${days}. ` +
+      `Total: ${formatPrice(order.total)}.${paidText}`;
+  }
+
+  cart = [];
+  updateCart();
+  checkoutForm.reset();
+  checkoutForm.hidden = true;
+  successMsg.hidden = false;
+  modal.hidden = false;
+}
+
+// Coming back from Stripe's payment page: ?payment=success&session_id=... or ?payment=cancelled
+async function handlePaymentReturn() {
+  const params = new URLSearchParams(location.search);
+  const payment = params.get("payment");
+  if (!payment) return;
+  history.replaceState(null, "", location.pathname); // clean up the address bar
+
+  if (payment === "cancelled") {
+    showToast("Payment cancelled — your cart is still here 🛒");
+    return;
+  }
+
+  try {
+    // Ask OUR server (which asks Stripe) if the payment really happened
+    const res = await fetch("/api/checkout/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: params.get("session_id") }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert("Payment problem:\n" + result.errors.join("\n"));
+      return;
+    }
+    showOrderSuccess(result.order);
+  } catch {
+    alert("Could not check your payment. Please contact us at sarojshop1020@gmail.com.");
+  }
 }
 
 function openCheckout() {
@@ -396,20 +590,24 @@ function closeCheckout() {
   modal.hidden = true;
 }
 
-// ===== 10. EVENT LISTENERS =====
-// One listener on the grid handles every "Add" button (event delegation)
+// ===== 11. EVENT LISTENERS =====
+// One listener on the grid handles every "Add" button (event delegation).
+// Jerseys open the options popup first (size + printing).
 productGrid.addEventListener("click", (e) => {
   const btn = e.target.closest(".add-btn");
-  if (btn) addToCart(Number(btn.dataset.id));
+  if (!btn) return;
+  const product = findProduct(Number(btn.dataset.id));
+  if (product.sizes) openOptions(product);
+  else addToCart({ id: product.id });
 });
 
 cartItems.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn) return;
-  const id = Number(btn.dataset.id);
-  if (btn.dataset.action === "plus") changeQty(id, 1);
-  if (btn.dataset.action === "minus") changeQty(id, -1);
-  if (btn.dataset.action === "remove") removeFromCart(id);
+  const key = btn.dataset.key;
+  if (btn.dataset.action === "plus") changeQty(key, 1);
+  if (btn.dataset.action === "minus") changeQty(key, -1);
+  if (btn.dataset.action === "remove") removeFromCart(key);
 });
 
 searchInput.addEventListener("input", (e) => {
@@ -453,12 +651,18 @@ checkoutForm.addEventListener("submit", async (e) => {
     fulfillment: method,
     delivery: { country: data.get("country"), postal: data.get("postal"), address: data.get("address") },
     pickup: { store: data.get("store"), date: data.get("pickupDate"), time: data.get("pickupTime") },
-    items: cart.map((item) => ({ id: item.id, qty: item.qty })),
+    // Only ids, quantities and choices — no prices! The server works out the prices.
+    items: cart.map((item) => ({
+      id: item.id,
+      qty: item.qty,
+      size: item.size,
+      printName: item.printName,
+      printNumber: item.printNumber,
+    })),
   };
 
-  const submitBtn = checkoutForm.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Placing order...";
+  placeOrderBtn.disabled = true;
+  placeOrderBtn.textContent = paymentsEnabled ? "Opening payment..." : "Placing order...";
 
   let result;
   try {
@@ -476,40 +680,28 @@ checkoutForm.addEventListener("submit", async (e) => {
     alert("Could not reach the server. Please try again.");
     return;
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Place Order";
+    placeOrderBtn.disabled = false;
+    updateCheckout(); // puts the button text back
   }
 
-  // The order number and total come from the server
-  orderNumber.textContent = result.orderNumber;
-
-  if (method === "pickup") {
-    orderDetails.textContent =
-      `🏪 Pick up at ${data.get("store")} on ${data.get("pickupDate")}, ${data.get("pickupTime")}. ` +
-      `Total: ${formatPrice(result.total)}`;
-  } else {
-    const { days } = getShippingInfo(data.get("country"), 0);
-    orderDetails.textContent =
-      `🚚 Delivering to ${data.get("address")}, ${data.get("country")} in ${days}. ` +
-      `Total: ${formatPrice(result.total)}`;
+  if (result.checkoutUrl) {
+    // Go to Stripe's secure card page. The cart stays saved until the payment is confirmed.
+    location.href = result.checkoutUrl;
+    return;
   }
-
-  cart = [];
-  updateCart();
-  checkoutForm.reset();
-  checkoutForm.hidden = true;
-  successMsg.hidden = false;
+  showOrderSuccess(result.order);
 });
 
-// Close cart / popup with the Escape key
+// Close popups with the Escape key
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeCart();
     closeCheckout();
+    closeOptions();
   }
 });
 
-// ===== 11. SCROLL ANIMATIONS =====
+// ===== 12. SCROLL ANIMATIONS =====
 // Elements with class="reveal" fade in when you scroll to them
 const revealObserver = new IntersectionObserver(
   (entries) => {
@@ -524,14 +716,15 @@ const revealObserver = new IntersectionObserver(
 );
 document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
 
-// ===== 12. START =====
+// ===== 13. START =====
 async function start() {
   populateCountries();
   renderShippingCards();
 
   try {
-    const res = await fetch("/api/products");
-    products = await res.json();
+    const [productsRes, configRes] = await Promise.all([fetch("/api/products"), fetch("/api/config")]);
+    products = await productsRes.json();
+    paymentsEnabled = (await configRes.json()).payments === "stripe";
   } catch {
     productGrid.innerHTML = `<p class="no-results">Could not load products. Is the server running? (npm start)</p>`;
     return;
@@ -540,6 +733,7 @@ async function start() {
   renderProducts();
   renderJerseyShowcase();
   updateCart();
+  handlePaymentReturn(); // did we just come back from Stripe?
 }
 
 start();
