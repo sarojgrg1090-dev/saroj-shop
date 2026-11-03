@@ -7,6 +7,18 @@ const statNew = document.getElementById("statNew");
 const statSales = document.getElementById("statSales");
 const refreshBtn = document.getElementById("refreshBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const orderTabs = document.getElementById("orderTabs");
+
+// Which orders each tab shows
+const TABS = {
+  active: (o) => o.status !== "completed" && o.status !== "cancelled",
+  completed: (o) => o.status === "completed",
+  cancelled: (o) => o.status === "cancelled",
+  all: () => true,
+};
+
+let allOrders = []; // every order from the server
+let currentTab = "active";
 
 // Login expired or missing → back to the login page
 function goToLogin() {
@@ -59,29 +71,50 @@ function renderOrder(order) {
     </div>`;
 }
 
+// Show only the orders of the chosen tab, and the count on every tab
+function renderOrders() {
+  orderTabs.querySelectorAll("[data-tab]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === currentTab);
+    btn.querySelector(".tab-count").textContent = allOrders.filter(TABS[btn.dataset.tab]).length;
+  });
+
+  const shown = allOrders.filter(TABS[currentTab]);
+  if (shown.length > 0) {
+    ordersList.innerHTML = shown.map(renderOrder).join("");
+  } else if (allOrders.length === 0) {
+    ordersList.innerHTML = `<p class="empty">No orders yet. Place one in the shop!</p>`;
+  } else {
+    ordersList.innerHTML = `<p class="empty">No ${currentTab} orders.</p>`;
+  }
+}
+
 async function loadOrders() {
-  let orders;
   try {
     const res = await fetch("/api/orders");
     if (res.status === 401) return goToLogin();
-    orders = await res.json();
+    allOrders = await res.json();
   } catch {
     ordersList.innerHTML = `<p class="empty">Could not load orders. Is the server running?</p>`;
     return;
   }
 
-  statOrders.textContent = orders.length;
-  statNew.textContent = orders.filter((o) => o.status === "received").length;
+  statOrders.textContent = allOrders.length;
+  statNew.textContent = allOrders.filter((o) => o.status === "received").length;
   statSales.textContent = formatPrice(
-    orders
+    allOrders
       .filter((o) => o.status !== "cancelled" && o.status !== "pending_payment") // not paid = not a sale yet
       .reduce((sum, o) => sum + o.total, 0)
   );
 
-  ordersList.innerHTML = orders.length
-    ? orders.map(renderOrder).join("")
-    : `<p class="empty">No orders yet. Place one in the shop!</p>`;
+  renderOrders();
 }
+
+orderTabs.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-tab]");
+  if (!btn) return;
+  currentTab = btn.dataset.tab;
+  renderOrders();
+});
 
 // Change status → send it to the backend → reload the list
 ordersList.addEventListener("change", async (e) => {

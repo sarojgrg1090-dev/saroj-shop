@@ -30,6 +30,13 @@
     </div>
 
     <div class="admin-actions">
+      <!-- Tabs: cancelled and completed orders are hidden from "Active", never deleted -->
+      <div class="order-tabs" id="orderTabs">
+        <button class="filter active" data-tab="active">Active <span class="tab-count">0</span></button>
+        <button class="filter" data-tab="completed">Completed <span class="tab-count">0</span></button>
+        <button class="filter" data-tab="cancelled">Cancelled <span class="tab-count">0</span></button>
+        <button class="filter" data-tab="all">All <span class="tab-count">0</span></button>
+      </div>
       <button class="filter" id="refreshBtn">🔄 Refresh</button>
     </div>
 
